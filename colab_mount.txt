@@ -1,0 +1,13 @@
+import pandas as pd
+import matplotlib.pyplot as plt  
+
+df = pd.read_csv("/content/drive/My Drive/Colab Notebooks/company_sales_data.csv")
+profitList = df ['total_profit'].tolist()
+monthList  = df ['month_number'].tolist()
+plt.plot(monthList, profitList, label = 'Month-wise Profit data of last year')
+plt.xlabel('Profit in dollar')
+plt.ylabel('Month number')
+plt.xticks(monthList)
+plt.title('Company Total Profit')
+plt.yticks([100000, 200000, 300000, 400000, 500000])
+plt.show()
