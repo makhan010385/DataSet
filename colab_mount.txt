@@ -1,6 +1,7 @@
+from google.colab import drive
+drive.mount('/content/drive')
 import pandas as pd
 import matplotlib.pyplot as plt  
-
 df = pd.read_csv("/content/drive/My Drive/Colab Notebooks/company_sales_data.csv")
 profitList = df ['total_profit'].tolist()
 monthList  = df ['month_number'].tolist()
