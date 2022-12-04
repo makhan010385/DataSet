@@ -1,0 +1,5 @@
+Explain the Different types of errors.
+Describe the different level of significance with suitable example.
+Explain the difference between Correlation and Regression.
+How is Hypothesis testing used in Linear Regression Algorithm?
+What is a Confusion Matrix?
