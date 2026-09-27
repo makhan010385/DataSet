@@ -1,5 +1,14 @@
 # Datasets
 
+## Streamlit app
+
+An interactive explorer for the datasets in this repo (preview, column stats, charts, filtering and CSV export):
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
 ### Datasets collected from R packages
  - mlbench 
  - kernlab
