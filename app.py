@@ -1,15 +1,16 @@
-"""Streamlit explorer for the datasets stored in this repository."""
+"""Streamlit explorer for a folder of datasets (defaults to this repository)."""
 
 from __future__ import annotations
 
 import io
+import os
 from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-DATA_DIR = Path(__file__).parent
+DEFAULT_DATA_DIR = Path(os.environ.get("DATASET_DIR", Path(__file__).parent))
 SUPPORTED_SUFFIXES = {".csv", ".xlsx", ".xls", ".json", ".txt"}
 MAX_PREVIEW_ROWS = 500
 
@@ -17,18 +18,18 @@ st.set_page_config(page_title="Dataset Explorer", page_icon="📊", layout="wide
 
 
 @st.cache_data(show_spinner=False)
-def list_datasets() -> list[str]:
+def list_datasets(data_dir: str) -> list[str]:
     files = [
         p
-        for p in DATA_DIR.iterdir()
+        for p in Path(data_dir).iterdir()
         if p.is_file() and p.suffix.lower() in SUPPORTED_SUFFIXES
     ]
     return sorted(p.name for p in files)
 
 
 @st.cache_data(show_spinner="Loading dataset...")
-def load_dataset(name: str, nrows: int | None) -> pd.DataFrame:
-    path = DATA_DIR / name
+def load_dataset(data_dir: str, name: str, nrows: int | None) -> pd.DataFrame:
+    path = Path(data_dir) / name
     suffix = path.suffix.lower()
     if suffix in {".xlsx", ".xls"}:
         df = pd.read_excel(path)
@@ -48,8 +49,8 @@ def categorical_columns(df: pd.DataFrame) -> list[str]:
     return df.select_dtypes(exclude="number").columns.tolist()
 
 
-def render_overview(df: pd.DataFrame, name: str) -> None:
-    size_mb = (DATA_DIR / name).stat().st_size / 1024**2
+def render_overview(df: pd.DataFrame, path: Path) -> None:
+    size_mb = path.stat().st_size / 1024**2
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Rows loaded", f"{len(df):,}")
     col2.metric("Columns", f"{df.shape[1]:,}")
@@ -188,7 +189,28 @@ def main() -> None:
     st.title("📊 Dataset Explorer")
     st.caption("Browse, summarise and visualise the datasets in this repository.")
 
-    datasets = list_datasets()
+    with st.sidebar:
+        st.header("Dataset folder")
+        data_dir = st.text_input(
+            "Folder containing the datasets",
+            value=str(DEFAULT_DATA_DIR),
+            help=r"Local path, e.g. E:\2026\Lincoln Conference\Third Coference\Dataset",
+        ).strip().strip('"')
+
+    if not Path(data_dir).is_dir():
+        st.error(f"`{data_dir}` is not an existing folder on this machine.")
+        return
+
+    try:
+        datasets = list_datasets(data_dir)
+    except OSError as exc:
+        st.error(f"Could not read `{data_dir}`: {exc}")
+        return
+
+    if not datasets:
+        st.warning(f"No CSV/Excel/JSON/TXT files found in `{data_dir}`.")
+        return
+
     with st.sidebar:
         st.header("Dataset")
         query = st.text_input("Search", placeholder="e.g. iris")
@@ -202,7 +224,7 @@ def main() -> None:
         st.caption(f"{len(datasets)} datasets available")
 
     try:
-        df = load_dataset(name, int(nrows) if nrows else None)
+        df = load_dataset(data_dir, name, int(nrows) if nrows else None)
     except Exception as exc:  # noqa: BLE001 - surface any parsing failure to the user
         st.error(f"Could not load `{name}`: {exc}")
         return
@@ -215,7 +237,7 @@ def main() -> None:
         ["Overview", "Statistics", "Charts", "Filter & export"]
     )
     with overview:
-        render_overview(df, name)
+        render_overview(df, Path(data_dir) / name)
     with stats:
         render_statistics(df)
     with charts:
