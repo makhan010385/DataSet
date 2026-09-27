@@ -127,7 +127,11 @@ def render_charts(df: pd.DataFrame) -> None:
             st.info("Line chart needs a numeric column.")
             return
         x = st.selectbox("X axis", all_cols)
-        y = st.multiselect("Y axis", nums, default=nums[:1])
+        y_options = [c for c in nums if c != x]
+        if not y_options:
+            st.info("Pick an X axis that is not the only numeric column.")
+            return
+        y = st.multiselect("Y axis", y_options, default=y_options[:1])
         if not y:
             st.info("Pick at least one Y column.")
             return
